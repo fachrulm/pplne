@@ -1,0 +1,26 @@
+__default__:
+  partition: "tgac-short"
+  memory: 10000
+  log: "logs/{rule}.%j.log"
+  time: "45:00"
+start:
+  memory: 3000
+ref_gff3:
+  memory: 500
+fastas:
+  memory: 5000
+gmap:
+  memory: 15000
+  queue: "tgac-medium"
+  time: "3:00:00"
+mikado:
+  queue: "tgac-medium"
+  time: "1:15:00"
+statsdo:
+  queue: "tgac-medium"
+  time: "1:00:00"
+refstats:
+  queue: "tgac-medium"
+  time: "1:00:00"
+triplets:
+  memory: 5000
