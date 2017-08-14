@@ -38,21 +38,18 @@ rule all:
         #stringy = stringy,
         #CHROMOSOMES = CHROMOSOMES,
         #SUBGENOMES = SUBGENOMES,
-        fasta = expand("chr{chrom}{sub_target}.fasta", chrom=CHROMOSOMES, sub_target=SUBGENOMES),
-        index = expand("Index/chr{chrom}{sub_target}/chr{chrom}{sub_target}.salcpchilddc", chrom=CHROMOSOMES, sub_target=SUBGENOMES),
-        #err = expand("{chrom}{sub_target}.err", chrom=CHROMOSOMES, sub_target=SUBGENOMES),
-        #start = expand("{chrom}{sub_target}.log", chrom=CHROMOSOMES, sub_target=SUBGENOMES),
-        #ref_gff3 = expand("{chrom}{sub_target}.ref_gff3.log", chrom=CHROMOSOMES, sub_target=SUBGENOMES),
-        gff3 = expand("chr{chrom}{sub_target}.reference.gff3", chrom=CHROMOSOMES, sub_target=SUBGENOMES),
-        cdna = expand("chr{chrom}{sub_target}.cdnas.fasta", chrom=CHROMOSOMES, sub_target=SUBGENOMES),
-        cds = expand("chr{chrom}{sub_target}.cds.fasta", chrom=CHROMOSOMES, sub_target=SUBGENOMES),
-        prot = expand("chr{chrom}{sub_target}.proteins.fasta", chrom=CHROMOSOMES, sub_target=SUBGENOMES),
+        fasta = expand("chr{chrom}{sub}.fasta", chrom=CHROMOSOMES, sub=SUBGENOMES),
+        index = expand("Index/chr{chrom}{sub}/chr{chrom}{sub}.salcpchilddc", chrom=CHROMOSOMES, sub=SUBGENOMES),
+        gff3 = expand("chr{chrom}{sub}.reference.gff3", chrom=CHROMOSOMES, sub=SUBGENOMES),
+        cdna = expand("chr{chrom}{sub}.cdnas.fa", chrom=CHROMOSOMES, sub=SUBGENOMES),
+        cds = expand("chr{chrom}{sub}.cds.fa", chrom=CHROMOSOMES, sub=SUBGENOMES),
+        prot = expand("chr{chrom}{sub}.proteins.fa", chrom=CHROMOSOMES, sub=SUBGENOMES),
         ali = expand("{chrom}{sub_query}_on_{chrom}{sub_target}.gff3", chrom=CHROMOSOMES, sub_query=SUBGENOMES, sub_target=SUBGENOMES),
-        cpare = expand("{chrom}{sub_query}_on_{chrom}{sub_target}.compare", chrom=CHROMOSOMES, sub_query=SUBGENOMES, sub_target=SUBGENOMES),
+        cpare = expand("{chrom}{sub_query}_on_{chrom}{sub_target}.compare.stats", chrom=CHROMOSOMES, sub_query=SUBGENOMES, sub_target=SUBGENOMES),
         stats_cm=expand("{chrom}{sub_query}_on_{chrom}{sub_target}.stats.tsv",chrom=CHROMOSOMES, sub_query=SUBGENOMES, sub_target=SUBGENOMES),
         stats_cx=expand("{chrom}{sub_query}_on_{chrom}{sub_target}.stats.txt",chrom=CHROMOSOMES, sub_query=SUBGENOMES, sub_target=SUBGENOMES),
-        stats_rf=expand("{chrom}{sub_target}.reference.stats.tsv",chrom=CHROMOSOMES, sub_target=SUBGENOMES),
-        stats_rx=expand("{chrom}{sub_target}.reference.stats.txt",chrom=CHROMOSOMES, sub_target=SUBGENOMES),
+        stats_rf=expand("chr{chrom}{sub}.reference.stats.tsv",chrom=CHROMOSOMES, sub=SUBGENOMES),
+        stats_rx=expand("chr{chrom}{sub}.reference.stats.txt",chrom=CHROMOSOMES, sub=SUBGENOMES),
         triplets_hc = expand("triplets_HC_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
         triplets_lc = expand("triplets_LC_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
         triplets_all = expand("triplets_all_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
@@ -71,33 +68,33 @@ rule all:
 rule start:
     input: genome="../references/161010_Chinese_Spring_v1.0_pseudomolecules.fasta"
     output:
-        fasta="chr{chrom}{sub_target}.fasta",
+        fasta="chr{chrom}{sub}.fasta"
     params:
         chroms=lambda wildcards: "chr%s" % wildcards.chrom,
-	subg=lambda wildcards: wildcards.sub_target
-    log: "{chrom}{sub_target}.log"
-    shell: """set +u && source samtools-1.3_dm && source gmap-20170508 && samtools faidx {input.genome} {params.chroms}{params.subg} > {output.fasta} && mkdir -p Index && gmap_build -D $(pwd)/Index -d {params.chroms}{params.subg} {output.fasta} > {log} 2> {log} && set -u"""
+	subg=lambda wildcards: wildcards.sub
+    log: "{chrom}{sub}.log"         
+    shell: """set +u && source samtools-1.3_dm && samtools faidx {input.genome} {params.chroms}{params.subg} > {output.fasta} && set -u"""
 
 rule infas:
     input: fasta = rules.start.output.fasta
     output:
-        index="Index/chr{chrom}{sub_target}/chr{chrom}{sub_target}.salcpchilddc"
+        index="Index/chr{chrom}{sub}/chr{chrom}{sub}.salcpchilddc"
     params:
-        chroms=lambda wildcards: "chr%s" % wildcards.chrom,
-        subg=lambda wildcards: wildcards.sub_target
-    log: "{chrom}{sub_target}.log"
-    shell: """set +u && source samtools-1.3_dm && source gmap-20170508 && mkdir -p Index && gmap_build -D $(pwd)/Index -d {params.chroms}{params.subg} {input.fasta} > {log} 2> {log} && set -u"""
+        chroms=lambda wildcards: wildcards.chrom,
+        subg=lambda wildcards: wildcards.sub
+    log: "{chrom}{sub}.log"
+    shell: """set +u && source samtools-1.3_dm && source gmap-20170508 && mkdir -p Index && gmap_build -D $(pwd)/Index -d chr{params.chroms}{params.subg} {input.fasta} > {log} 2> {log} && set -u"""
 
 rule ref_gff3:
-    input:
+    input:   
         annot="../references/iwgsc_refseqv1.0_UTR_2017May05.gff3"
     output:
-        gff3="chr{chrom}{sub_target}.reference.gff3"
+        gff3="chr{chrom}{sub}.reference.gff3"
     params:
         chroms=lambda wildcards: "chr%s" % wildcards.chrom,
-	subg=lambda wildcards: wildcards.sub_target
+	subg=lambda wildcards: wildcards.sub
     log:
-        "{chrom}{sub_target}.ref_gff3.log"
+        "{chrom}{sub}.ref_gff3.log"
     shell:"egrep \"^(#|{params.chroms}{params.subg})\" {input.annot} | uniq > {output.gff3}"
 
 ##Retrieve FASTAs
@@ -106,38 +103,61 @@ rule fastas:
         fasta = rules.start.output.fasta,
         gff3 = rules.ref_gff3.output.gff3
     output:
-        cdna="chr{chrom}{sub_target}.cdnas.fa",
-        cds="chr{chrom}{sub_target}.cds.fa",
-        prot="chr{chrom}{sub_target}.proteins.fa"
+        cdna="chr{chrom}{sub}.cdnas.fa",
+        cds="chr{chrom}{sub}.cds.fa",
+        prot="chr{chrom}{sub}.proteins.fa"
     shell:
-       "" "set +u && cufflinks-2.2.2_beta_20150904 && gffread -g {input.fasta} -w {output.cdna} -x {output.cds} -y {output.prot} {input.gff3} && set -u"""
+       "" "set +u && source cufflinks-2.2.2_beta_20150904 && gffread -g {input.fasta} -w {output.cdna} -x {output.cds} -y {output.prot} {input.gff3} && set -u"""
 
 
 ##Perform Alignments
 rule gmap:
     input:
-        cds=rules.fastas.output.cds
+        cds="chr{chrom}{sub_query}.cds.fa",
+        index="Index/chr{chrom}{sub_target}/chr{chrom}{sub_target}.salcpchilddc"
     output:
-        ali="{chrom}{sub_query}_on_{chrom}{sub_target}.gff3",
+        ali="{chrom}{sub_query}_on_{chrom}{sub_target}.gff3"
     params:
-        chroms=lambda wildcards: "%s" % wildcards.chrom,
+        chroms=lambda wildcards: wildcards.chrom,
 	subg=lambda wildcards: wildcards.sub_target
-    shell: """set +u && source gmap-20170508 && gmap -F -D $(pwd)/Index -d {params.chroms}{params.subg} --max-intronlength-middle=71000 --max-intronlength-ends=71000 --no-chimeras -t 10 -f gff3_gene -n 1 {input.cds} 2> {output.ali} && set -u"""
+    log: "logs/{chrom}{sub_query}_on_{chrom}{sub_target}.gmap.log"
+    shell: """set +u && source gmap-20170508 && gmap -F -D $(pwd)/Index -d chr{params.chroms}{params.subg} --max-intronlength-middle=71000 --max-intronlength-ends=71000 --no-chimeras -t 10 -f gff3_gene -n 1 {input.cds} > {output.ali} 2> {log} && set -u"""
 
 
 ###Get initial pairwise comparison files (*.compare.*)
+rule filter_gmap:
+    input:
+      ali=rules.gmap.output.ali
+    output:
+      ali="{chrom}{sub_query}_on_{chrom}{sub_target}.no_cds.gff3"
+    log: "logs/{chrom}{sub_query}_on_{chrom}{sub_target}.filter_gmap.log"
+    shell: """egrep -v "(CDS|UTR)\W" {input.ali} > {output.ali} 2> {log}"""
+
+rule index_mikado:
+    input:
+      gff3="chr{chrom}{sub}.reference.gff3"
+    output:
+      midx="chr{chrom}{sub}.reference.gff3.midx"
+    log: "logs/chr{chrom}{sub}.mikado_index.log"
+    shell: """set +u && source mikado-1.0.1 && mikado compare -r {input.gff3} --index -l {log} && set -u"""
+
 rule mikado:
     input:
-        ali=rules.gmap.output.ali,
-        gff3 = rules.ref_gff3.output.gff3
+        ali=rules.filter_gmap.output.ali,
+        gff3="chr{chrom}{sub_target}.reference.gff3",
+        midx="chr{chrom}{sub_target}.reference.gff3.midx"
     output:
-        cpare="{chrom}{sub_query}_on_{chrom}{sub_target}.compare"
-    log: "{}_on_{}.compare.log"
-    shell: """set +u && source mikado-1.0.1 && mikado compare -r {input.gff3} -p {input.ali} --log {log} -o {output.cpare} && set -u"""
+        cpare="{chrom}{sub_query}_on_{chrom}{sub_target}.compare.stats",
+        tmap="{chrom}{sub_query}_on_{chrom}{sub_target}.compare.tmap",
+        refmap="{chrom}{sub_query}_on_{chrom}{sub_target}.compare.refmap"
+    params:
+        cpare=lambda wildcards: "{chrom}{sub_query}_on_{chrom}{sub_target}.compare".format(chrom=wildcards.chrom, sub_query=wildcards.sub_query, sub_target=wildcards.sub_target)
+    log: "{chrom}{sub_query}_on_{chrom}{sub_target}.compare.log"
+    shell: """set +u && source mikado-1.0.1 && mikado compare -r {input.gff3} -p {input.ali} --log {log} -o {params.cpare} && set -u"""
 
 rule statsdo:
     input:
-        ali = rules.gmap.output.ali
+        ali = rules.filter_gmap.output.ali
     output:
         stats_cm="{chrom}{sub_query}_on_{chrom}{sub_target}.stats.tsv",
         stats_cx="{chrom}{sub_query}_on_{chrom}{sub_target}.stats.txt"
@@ -147,8 +167,8 @@ rule ref_stats:
     input:
        gff3 = rules.ref_gff3.output.gff3
     output:
-       stats_rf="{chrom}{sub_target}.reference.stats.tsv",
-       stats_rx="{chrom}{sub_target}.reference.stats.txt"
+       stats_rf="chr{chrom}{sub}.reference.stats.tsv",
+       stats_rx="chr{chrom}{sub}.reference.stats.txt"
     shell: "set +u && source mikado-1.0.1 && mikado util stats --tab-stats {output.stats_rf} {input.gff3} {output.stats_rx} && set -u"
 
 
@@ -169,4 +189,4 @@ rule triplets:
         crossc_all_eq = "crosscheck_all_eq_{chrom}A-{chrom}B-{chrom}D.tsv"
     params: chroms=lambda wildcards: "%s" % wildcards.chrom
     shell:
-        "python3 main.py {params.chroms}A {params.chroms}B {params.chroms}D"
+        "set +u && source python-3.5.1 && source pandas-0.18.0 && python3 main.py {params.chroms}A {params.chroms}B {params.chroms}D && set -u"
