@@ -57,10 +57,11 @@ rule all:
         triplets_lc_eq = expand("triplets_LC_eq_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
         triplets_all_eq = expand("triplets_all_eq_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
         crossc_hc = expand("crosscheck_HC_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
-        crossc_lc = expand("crosscheck_LC_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
-        crossc_all = expand("crosscheck_all_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
+        #crossc_lc = expand("crosscheck_LC_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
+        #crossc_all = expand("crosscheck_all_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
         crossc_hc_eq = expand("crosscheck_HC_eq_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
-        crossc_all_eq = expand("crosscheck_all_eq_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
+        perc = expand("percent_HC_{chrom}A-{chrom}B-{chrom}D.txt", chrom=CHROMOSOMES),
+        #crossc_all_eq = expand("crosscheck_all_eq_{chrom}A-{chrom}B-{chrom}D.tsv", chrom=CHROMOSOMES),
         #tripin = expand("{chrom}A {chrom}B {chrom}D", chrom=CHROMOSOMES)
     output: touch("all.done")
 
@@ -183,10 +184,38 @@ rule triplets:
         triplets_lc_eq = "triplets_LC_eq_{chrom}A-{chrom}B-{chrom}D.tsv",
         triplets_all_eq = "triplets_all_eq_{chrom}A-{chrom}B-{chrom}D.tsv",
         crossc_hc = "crosscheck_HC_{chrom}A-{chrom}B-{chrom}D.tsv",
-        crossc_lc = "crosscheck_LC_{chrom}A-{chrom}B-{chrom}D.tsv",
-        crossc_all = "crosscheck_all_{chrom}A-{chrom}B-{chrom}D.tsv",
+        #crossc_lc = "crosscheck_LC_{chrom}A-{chrom}B-{chrom}D.tsv",
+        #crossc_all = "crosscheck_all_{chrom}A-{chrom}B-{chrom}D.tsv",
         crossc_hc_eq = "crosscheck_HC_eq_{chrom}A-{chrom}B-{chrom}D.tsv",
-        crossc_all_eq = "crosscheck_all_eq_{chrom}A-{chrom}B-{chrom}D.tsv"
+        #crossc_all_eq = "crosscheck_all_eq_{chrom}A-{chrom}B-{chrom}D.tsv",
+        perc = "percent_HC_{chrom}A-{chrom}B-{chrom}D.txt"
     params: chroms=lambda wildcards: "%s" % wildcards.chrom
     shell:
         "set +u && source python-3.5.1 && source pandas-0.18.0 && python3 main.py {params.chroms}A {params.chroms}B {params.chroms}D && set -u"
+
+rule calper:
+    output:
+        finperchc = "percentage_perchrom_HC.txt",
+        finperchceq = "percentage_perchrom_HCequal.txt"
+    shell: "set +u && cat percent_HC_* > {output.finperchc} && cat percent_HCeq_* > {output.finperchceq} && set -u"
+
+rule totper:
+    input:
+        finperchc = "percentage_perchrom_HC.txt",
+        finperchceq = "percentage_perchrom_HCequal.txt"
+    #output:
+    shell: """
+        set +u &&
+        contrip=$(cat wheat.homeolog_groups.release.nonTE.TRIADS.tsv| wc -l) &&
+        crosshc=$(cat crosscheck_HC_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
+        crosshc_eq=$(cat crosscheck_HC_eq_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
+        triplhc=$(cat triplets_HC_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
+        triplhc_eq=$(cat triplets_HC_eq_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
+        echo ""Overal percentage against consortium list: $(echo "scale=2; $crosshc_eq*100/$contrip" | bc)%"" >> {input.finperchceq} &&
+        echo ""$crosshc_eq out of $contrip"" >> {input.finperchceq} &&
+        echo ""Overal percentage against generated triplets: $(echo "scale=2; $crosshc_eq*100/$triplhc_eq" | bc)%"" >> {input.finperchceq} &&
+        echo ""$crosshc_eq out of $triplhc_eq"" >> {input.finperchceq} &&
+        echo ""Overal percentage against consoritum list: $(echo "scale=2; $crosshc*100/$contrip" | bc)%"" >> {input.finperchc} &&
+        echo ""$crosshc out of $contrip"" >> {input.finperchc} &&
+        echo ""Overal percentage against generated triplets: $(echo "scale=2; $crosshc*100/$triplhc" | bc)%"" >> {input.finperchc} &&
+        echo ""$crosshc out of $triplhc"" >> {input.finperchc} && set -u"""
