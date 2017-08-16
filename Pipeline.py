@@ -188,7 +188,7 @@ rule triplets:
         #crossc_all = "crosscheck_all_{chrom}A-{chrom}B-{chrom}D.tsv",
         crossc_hc_eq = "crosscheck_HC_eq_{chrom}A-{chrom}B-{chrom}D.tsv",
         #crossc_all_eq = "crosscheck_all_eq_{chrom}A-{chrom}B-{chrom}D.tsv",
-        perc = "percent_HC_{chrom}A-{chrom}B-{chrom}D.txt"
+        perc = "percent_HC_{chrom}A-{chrom}B-{chrom}D.txt",
     params: chroms=lambda wildcards: "%s" % wildcards.chrom
     shell:
         "set +u && source python-3.5.1 && source pandas-0.18.0 && python3 main.py {params.chroms}A {params.chroms}B {params.chroms}D && set -u"
@@ -196,7 +196,7 @@ rule triplets:
 rule calper:
     output:
         finperchc = "percentage_perchrom_HC.txt",
-        finperchceq = "percentage_perchrom_HCequal.txt"
+        finperchceq = "percentage_perchrom_HCequal.txt",
     shell: "set +u && cat percent_HC_* > {output.finperchc} && cat percent_HCeq_* > {output.finperchceq} && set -u"
 
 rule totper:
@@ -206,11 +206,11 @@ rule totper:
     #output:
     shell: """
         set +u &&
-        contrip=$(cat wheat.homeolog_groups.release.nonTE.TRIADS.tsv| wc -l) &&
-        crosshc=$(cat crosscheck_HC_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
-        crosshc_eq=$(cat crosscheck_HC_eq_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
-        triplhc=$(cat triplets_HC_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
-        triplhc_eq=$(cat triplets_HC_eq_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
+        contrip=$(tail -n +2 wheat.homeolog_groups.release.nonTE.TRIADS.tsv| wc -l) &&
+        crosshc=$(tail -n +2 crosscheck_HC_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
+        crosshc_eq=$(tail -n +2 crosscheck_HC_eq_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
+        triplhc=$(tail -n +2 triplets_HC_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
+        triplhc_eq=$(tail -n +2 triplets_HC_eq_[1-7]A-[1-7]B-[1-7]D.tsv|wc -l) &&
         echo ""Overal percentage against consortium list: $(echo "scale=2; $crosshc_eq*100/$contrip" | bc)%"" >> {input.finperchceq} &&
         echo ""$crosshc_eq out of $contrip"" >> {input.finperchceq} &&
         echo ""Overal percentage against generated triplets: $(echo "scale=2; $crosshc_eq*100/$triplhc_eq" | bc)%"" >> {input.finperchceq} &&
