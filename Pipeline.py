@@ -154,7 +154,7 @@ rule mikado:
     params:
         cpare=lambda wildcards: "{chrom}{sub_query}_on_{chrom}{sub_target}.compare".format(chrom=wildcards.chrom, sub_query=wildcards.sub_query, sub_target=wildcards.sub_target)
     log: "{chrom}{sub_query}_on_{chrom}{sub_target}.compare.log"
-    shell: """set +u && source mikado-1.0.1 && mikado compare -r {input.gff3} -p {input.ali} --log {log} -o {params.cpare} && set -u"""
+    shell: """set +u && source mikado-1.0.1 && mikado compare -eu -r {input.gff3} -p {input.ali} --log {log} -o {params.cpare} && set -u"""
 
 rule statsdo:
     input:
